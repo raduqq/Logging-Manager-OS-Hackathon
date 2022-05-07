@@ -58,8 +58,6 @@ static int lmc_client_function(SOCKET client_sock)
 		free(client);
 	default:
 		// Parent process
-		// wait_ret = waitpid(client_pid, &status, 0);
-		// DIE(wait_ret < 0, "waitpid client_pid");
 		break;
 	}
 

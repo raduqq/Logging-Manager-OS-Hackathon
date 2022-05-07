@@ -266,7 +266,32 @@ static int lmc_flush(struct lmc_client *client) { return 0; }
  *
  * TODO: Implement proper handling logic.
  */
-static int lmc_send_stats(struct lmc_client *client) { return 0; }
+static int lmc_send_stats(struct lmc_client *client) {
+	// Get server time
+	char time_buf[LMC_TIME_SIZE];
+	lmc_crttime_to_str(time_buf, LMC_TIME_SIZE, LMC_TIME_FORMAT);
+
+	// Get allocated memory
+	int page_size = getpagesize();
+	uint64_t used_memory = client->cache->pages * page_size;
+
+	// Get number of log lines
+	struct log_in_memory *lim = client->cache->ptr;
+	uint64_t log_lines_cnt = lim->no_logs;
+
+	// Build stats
+	char stats[LMC_STATUS_MAX_SIZE];
+	memset(stats, 0, LMC_STATUS_MAX_SIZE);
+	sprintf(stats, LMC_STATS_FORMAT, time_buf, used_memory, log_lines_cnt);
+
+	printf("DEBUG: STATS: %s\n", stats);
+
+	// Send stats
+	int buf_len = strlen(stats);
+	lmc_send(client->client_sock, stats, buf_len, LMC_SEND_FLAGS);
+
+	return 0;
+}
 
 /**
  * Send the stored log lines to the client.
@@ -283,7 +308,6 @@ static int lmc_send_loglines(struct lmc_client *client)
 {
 	struct log_in_memory *lim = client->cache->ptr;
 	uint64_t number_of_lines = lim->no_logs;
-	printf("debug no_lines: %d\n", number_of_lines);
 	lmc_send(client->client_sock, &number_of_lines, sizeof(uint64_t), LMC_SEND_FLAGS);
 
 	for (int i = 0; i < number_of_lines; i++) {
@@ -358,6 +382,8 @@ struct lmc_client_logline *lmc_create_logline(struct lmc_command cmd)
 
 	memcpy(log->logline, cmd.data + LMC_TIME_SIZE, LMC_LOGLINE_SIZE);
 	log->logline[LMC_LOGLINE_SIZE - 1] = '\0';
+
+	return log;
 }
 
 /**
@@ -417,7 +443,6 @@ int lmc_get_command(struct lmc_client *client)
 	case LMC_CONNECT:
 		// TODO: cand e cachesize full
 		err = lmc_connect_client(client, cmd.data);
-		printf("debug: %d\n", err);
 		break;
 	case LMC_SUBSCRIBE:
 		// TODO: cand e cachesize full
@@ -428,7 +453,7 @@ int lmc_get_command(struct lmc_client *client)
 		break;
 	case LMC_ADD:
 		/* Parse the client data and create a log line structure */
-		log = lmc_create_log(cmd);
+		log = lmc_create_logline(cmd);
 
 		// Call command handler
 		err = lmc_add_log(client, log);

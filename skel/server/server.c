@@ -318,6 +318,24 @@ static int lmc_send_loglines(struct lmc_client *client)
 	return 0;
 }
 
+static int lmc_send_loglines_interval(struct lmc_client *client, char *args)
+{
+	struct log_in_memory *lim = client->cache->ptr;
+	unsigned long number_of_lines = lim->no_logs;
+	char buffer[128];
+	int i;
+
+	sprintf(buffer, "%ld", number_of_lines);
+	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);
+
+	for (i = 0; i < number_of_lines; i++) {
+		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
+			 LMC_SEND_FLAGS);
+	}
+
+	return 0;
+}
+
 /**
  * Parse a command from the client. The command must be in the following format:
  * "cmd data", with a single space between the command and the associated data.
@@ -470,7 +488,11 @@ int lmc_get_command(struct lmc_client *client)
 		err = lmc_unsubscribe_client(client);
 		break;
 	case LMC_GETLOGS:
-		err = lmc_send_loglines(client);
+		if (cmd.data != NULL) {
+			err = lmc_send_loglines_interval(client, cmd.data);
+		} else {
+			err = lmc_send_loglines(client);
+		}
 		break;
 	default:
 		/* unknown command */

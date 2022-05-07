@@ -53,7 +53,7 @@ static int lmc_client_function(SOCKET client_sock)
 			if (rc == -1)
 				break;
 		}
-
+		printf("debug: sterg socketul");
 		close(client_sock);
 		free(client);
 	default:

@@ -155,7 +155,7 @@ found:
  */
 static int lmc_disconnect_client(struct lmc_client *client)
 {
-	int err = 0;
+	int err = -1;
 	size_t i;
 
 	printf("%s\n", client->cache->service_name);

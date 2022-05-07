@@ -8,9 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <unistd.h>
+
 
 #ifdef __unix__
+#include <unistd.h>
 #include <inttypes.h>
 #elif defined(_WIN32)
 #include <winsock2.h>

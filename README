@@ -1,0 +1,31 @@
+# SO - Hackathon - Logging Manage
+
+Nume: Stefan Saraev, Radu-Stefan Minea
+Serie: CA
+Grupa: 332CA, 334CA
+Link repository privat: https://github.com/raduqq/SO-HACKATHON
+
+===============================================================================
+## Functionalitati de baza
+
+* Comenzi
+* Paralelizarea clientilor
+  - Am dat fork dupa acceptarea conexiunii de catre server, pentru a permite
+  atat primirea in continuare a noilor conexiuni, cat si tratarea celor curente
+* Sincronizarea accesului
+  - Nu este cazul, intrucat am folosit procese in loc de thread-uri
+
+===============================================================================
+## Functionalitati extra
+
+TODO
+
+===============================================================================
+## Limitari
+
+TODO
+
+===============================================================================
+## Feedback
+
+Super dragut Hackathon-ul si multumim pentru pizza!

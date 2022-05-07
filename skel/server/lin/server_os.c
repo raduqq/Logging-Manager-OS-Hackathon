@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <wait.h>
 
+struct Hashtable *credentials;
+
 char *lmc_logfile_path;
 
 /**
@@ -54,11 +56,72 @@ static int lmc_client_function(SOCKET client_sock)
 }
 
 /**
+ * @brief Initializes user profiles hashtable with predefined values
+ *
+ */
+void init_credentials(void)
+{
+	credentials = calloc(1, sizeof(struct Hashtable));
+	init_ht(credentials, MAX_NO_PROFILES, hash_function_string, compare_function_strings);
+
+	char *users[] = {"a", "gicu", "stefan", "radu"};
+	char *passes[] = {"a", "amicu", "saraev", "minea"};
+
+	int i;
+
+	for (i = 0; i < NO_PROFILES; i++)
+	{
+		int user_len = strlen(users[i]);
+		put(credentials, users[i], user_len, passes[i]);
+	}
+}
+
+/**
+ * @brief
+ *
+ * @param username to be checked
+ * @param password to be checked
+ * @return int 0 if successful, -1 if failedd
+ */
+int check_credentials(char *username, char *password)
+{
+	char *expected_pass = get(credentials, username);
+
+	if (expected_pass != NULL && strcmp(expected_pass, password) == 0)
+	{
+		return 0;
+	}
+
+	return -1;
+}
+
+/**
+ * @brief Authenthificates user
+ *
+ * @return int 0 if successful, -1 if failed
+ */
+int authenthificate(void)
+{
+	char username[MAX_USERNAME_LEN];
+	char password[MAX_PASSWORD_LEN];
+
+	printf("Enter username: ");
+	scanf("%s", username);
+
+	printf("Enter password: ");
+	scanf("%s", password);
+
+	return check_credentials(username, password);
+}
+
+/**
  * Server main loop function. Opens a socket in listening mode and waits for
  * connections.
  */
 void lmc_init_server_os(void)
 {
+	init_credentials();
+
 	int sock, client_size, client_sock;
 	struct sockaddr_in server, client;
 	int opten;
@@ -88,17 +151,36 @@ void lmc_init_server_os(void)
 		exit(1);
 	}
 
+	// Count number of auth attempts
+	int no_attempts = 0;
+
 	while (1)
 	{
-		memset(&client, 0, sizeof(struct sockaddr_in));
-		client_size = sizeof(struct sockaddr_in);
-		client_sock = accept(sock, (struct sockaddr *)&client, (socklen_t *)&client_size);
+		// Suppose the user will enter wrong credentials
+		client_sock = -1;
 
+		// Let the connection through only if correct credetnails
+		if (authenthificate() == 0)
+		{
+			memset(&client, 0, sizeof(struct sockaddr_in));
+			client_size = sizeof(struct sockaddr_in);
+			client_sock = accept(sock, (struct sockaddr *)&client, (socklen_t *)&client_size);
+		} else {
+			printf("Wrong <username:password> pair! Try again\n");
+
+			if (++no_attempts == MAX_AUTH_ATTEMPTS) {
+				exit(0);
+			}
+		}
+
+		// Raise error if connection failed
 		if (client_sock < 0)
 		{
 			perror("Error while accepting clients");
+			continue;
 		}
 
+		// Fork for parallelization
 		pid_t client_pid = fork();
 
 		switch (client_pid)
@@ -181,7 +263,7 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
 		{
 			// Map address
 			void *new_addr = mmap(NULL, (client->cache->pages + 1) * page_size, PROT_READ | PROT_WRITE,
-								 MAP_ANON | MAP_SHARED, -1, 0);
+								  MAP_ANON | MAP_SHARED, -1, 0);
 
 			// Copy logs to new address
 			memcpy(new_addr, lim->list_of_logs, lim->no_logs * sizeof(struct lmc_client_logline));
@@ -225,7 +307,7 @@ int lmc_flush_os(struct lmc_client *client)
 	// Open file to write in
 	int fd = open(buffer, O_WRONLY | O_CREAT);
 	DIE(fd < 0, "flush open error");
-	
+
 	// Write to logfile
 	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++)
 	{

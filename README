@@ -6,6 +6,12 @@ Grupa: 332CA, 334CA
 Link repository privat: https://github.com/raduqq/SO-HACKATHON
 
 ===============================================================================
+## Mentiuni generale
+
+* Implementarea structurilor de date (LinkedList, Hashtable) a fost preluata
+din laboratorul de SD, 2019 - 2020.
+
+===============================================================================
 ## Functionalitati de baza
 
 * Comenzi
@@ -18,7 +24,18 @@ Link repository privat: https://github.com/raduqq/SO-HACKATHON
 ===============================================================================
 ## Functionalitati extra
 
-TODO
+* Autentificare - Implementata DOAR pe Linux
+  - Retine un Hashtable de perechi <user:parola> si inainte de fiecare accept
+  se cer de la utilizator user si parola, de la tastatura
+  - Daca perechea nu este corecta, cererea este invalidata, iar utilizatorul
+  este invitat sa mai incerce o data
+  - Daca utilizatorul introduce de 3 ori o pereche gresita de credentiale,
+  server-ul este oprit
+  - Daca vreti sa rulati checker-ul impreuna cu functionalitatea de auth,
+  am inclus perechea <user:"a" ; pass:"a">, pentru a facilita autentificarea
+  
+
+* Modificam fisierul de log vechi 
 
 ===============================================================================
 ## Limitari

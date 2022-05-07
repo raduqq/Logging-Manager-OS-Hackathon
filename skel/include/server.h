@@ -7,6 +7,7 @@
 
 #include "utils.h"
 #include <sys/types.h>
+#include "hashtable.h"
 
 #ifdef __unix__
 #include <sys/socket.h>
@@ -15,6 +16,14 @@
 #define LMC_DEFAULT_CLIENTS_NO 20
 #define LMC_FLUSH_TIME 1 /* minutes */
 #define LMC_LOGFILE_NAME_LEN 128
+
+#define NO_PROFILES 4
+#define MAX_NO_PROFILES 10
+
+#define MAX_USERNAME_LEN 100
+#define MAX_PASSWORD_LEN 100
+
+#define MAX_AUTH_ATTEMPTS 3
 
 #ifdef __unix__
 #define LMC_SEND_FLAGS MSG_NOSIGNAL
@@ -29,7 +38,8 @@ typedef int HANDLE;
  * @field ptr: Pointer to the beginning of this cache;
  * @field pages: Number of pages allocated for this cache.
  */
-struct lmc_cache {
+struct lmc_cache
+{
 	char *service_name;
 	void *ptr;
 	size_t pages;

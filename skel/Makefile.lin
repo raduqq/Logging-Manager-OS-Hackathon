@@ -2,6 +2,9 @@ CC=gcc
 CFLAGS = -fPIC -Wall
 LDLIBS = -lpthread -pthread
 
+DS_SRC = data_structures/linkedlist.c data_structures/hashtable.c
+DS_LIBS = include/hashtable.h include/linkedlist.h
+
 .PHONY: build
 build: liblmc.so lmcd
 
@@ -15,12 +18,12 @@ lmc_os.o: liblmc/lin/lmc_os.c include/lmc.h include/utils.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 lmcd: server.o server_os.o utils.o
-	$(CC) $(LDLIBS) -o $@ $^
+	$(CC) $(DS_SRC) $(LDLIBS) -o $@ $^
 
-server.o: server/server.c include/server.h include/utils.h
+server.o: server/server.c include/server.h include/utils.h $(DS_LIBS)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-server_os.o: server/lin/server_os.c include/server.h include/utils.h
+server_os.o: server/lin/server_os.c include/server.h include/utils.h include/server.h include/utils.h $(DS_LIBS)
 	$(CC) $(CFLAGS) -o $@ -c $< $(LDLIBS)
 
 utils.o: utils.c include/utils.h

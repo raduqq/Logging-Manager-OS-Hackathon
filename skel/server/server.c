@@ -209,7 +209,17 @@ static int lmc_unsubscribe_client(struct lmc_client *client) { return 0; }
  *
  * TODO: Implement proper handling logic.
  */
-static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
+
+struct log_in_memory {
+	int no_logs;
+	void **list_of_logs;
+}
+
+static int
+lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
+{
+	return 0;
+}
 
 /**
  * Flush client logs to disk.

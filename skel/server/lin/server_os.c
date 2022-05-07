@@ -190,13 +190,18 @@ int lmc_flush_os(struct lmc_client *client)
 	sprintf(buffer, "%s/%s.log", "logs_logmemcache", client->cache->service_name);
 	lmc_init_logdir("logs_logmemcache");
 	lmc_rotate_logfile(buffer);
-	int fd = open(buffer, O_WRONLY);
-
+	printf("debug file: %s\n", buffer);
+	int fd = open(buffer, O_WRONLY | O_CREAT);
+	if (fd < 0) {
+		printf("eroare! %d\n", fd);
+	}
 	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++) {
 		write(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]));
+		printf("voi scrie: %s\n", &(lim->list_of_logs[i]));
 	}
 
 	lim->no_logs_stored_on_disk = lim->no_logs;
+	close(fd);
 
 	return 0;
 }

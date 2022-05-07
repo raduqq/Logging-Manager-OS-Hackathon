@@ -155,7 +155,7 @@ found:
  */
 static int lmc_disconnect_client(struct lmc_client *client)
 {
-	int err = 0;
+	int err = -1;
 	size_t i;
 
 	printf("%s\n", client->cache->service_name);
@@ -203,13 +203,7 @@ static int lmc_unsubscribe_client(struct lmc_client *client)
 			}
 			lmc_cache_count--;
 
-			// flush them maybe?
-
-			// free the fields
-			free(client->cache->service_name);
-			// free cache with munmap
-
-			free(client->cache);
+			lmc_unsubscribe_os(client);
 			err = 0;
 			goto found;
 		}
@@ -226,7 +220,7 @@ found:
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * TODO DONE: Implement proper handling logic.
  */
 
 static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
@@ -242,7 +236,7 @@ static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * TODO DONE: Implement proper handling logic.
  */
 static int lmc_flush(struct lmc_client *client)
 {
@@ -260,7 +254,7 @@ static int lmc_flush(struct lmc_client *client)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * TODO DONE: Implement proper handling logic.
  */
 static int lmc_send_stats(struct lmc_client *client)
 {
@@ -281,8 +275,6 @@ static int lmc_send_stats(struct lmc_client *client)
 	memset(stats, 0, LMC_STATUS_MAX_SIZE);
 	sprintf(stats, LMC_STATS_FORMAT, time_buf, used_memory, log_lines_cnt);
 
-	printf("DEBUG: STATS: %s\n", stats);
-
 	// Send stats
 	int buf_len = strlen(stats);
 	lmc_send(client->client_sock, stats, buf_len, LMC_SEND_FLAGS);
@@ -299,13 +291,12 @@ static int lmc_send_stats(struct lmc_client *client)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * TODO DONE: Implement proper handling logic.
  */
 static int lmc_send_loglines(struct lmc_client *client)
 {
 	struct log_in_memory *lim = client->cache->ptr;
 	uint64_t number_of_lines = lim->no_logs;
-	printf("debug no_lines: %d\n", number_of_lines);
 	char buffer[128];
 	sprintf(buffer, "%ld", number_of_lines);
 	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);

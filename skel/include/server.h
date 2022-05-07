@@ -41,6 +41,7 @@ struct lmc_cache {
  * @field cache: Pointer to the cache allocated for this client.
  */
 struct lmc_client {
+	int isOnline;
 	SOCKET client_sock;
 	struct lmc_cache *cache;
 };

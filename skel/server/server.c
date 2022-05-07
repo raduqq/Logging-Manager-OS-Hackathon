@@ -198,7 +198,8 @@ static int lmc_unsubscribe_client(struct lmc_client *client)
 			continue;
 		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0) {
 			// remove this from the array
-			for (int j = i + 1; j < lmc_cache_count; j++) {
+			int j;
+			for (j = i + 1; j < lmc_cache_count; j++) {
 				lmc_caches[j - 1] = lmc_caches[j];
 			}
 			lmc_cache_count--;
@@ -260,23 +261,30 @@ static int lmc_send_stats(struct lmc_client *client)
 {
 	// Get server time
 	char time_buf[LMC_TIME_SIZE];
-	lmc_crttime_to_str(time_buf, LMC_TIME_SIZE, LMC_TIME_FORMAT);
+	
 
 	// Get allocated memory
-	int page_size = getpagesize();
-	uint64_t used_memory = client->cache->pages * page_size;
-
+	int page_size = 0; //getpagesize();
+	unsigned long used_memory = client->cache->pages * page_size;
+	
 	// Get number of log lines
 	struct log_in_memory *lim = client->cache->ptr;
-	uint64_t log_lines_cnt = lim->no_logs;
-
-	// Build stats
+	
+	unsigned long log_lines_cnt = lim->no_logs;
+	
 	char stats[LMC_STATUS_MAX_SIZE];
+	
+	int buf_len = 0;
+	
+	lmc_crttime_to_str(time_buf, LMC_TIME_SIZE, LMC_TIME_FORMAT);
+	
+	// Build stats
+	
 	memset(stats, 0, LMC_STATUS_MAX_SIZE);
 	sprintf(stats, LMC_STATS_FORMAT, time_buf, used_memory, log_lines_cnt);
 
 	// Send stats
-	int buf_len = strlen(stats);
+	buf_len = strlen(stats);
 	lmc_send(client->client_sock, stats, buf_len, LMC_SEND_FLAGS);
 
 	return 0;
@@ -296,12 +304,14 @@ static int lmc_send_stats(struct lmc_client *client)
 static int lmc_send_loglines(struct lmc_client *client)
 {
 	struct log_in_memory *lim = client->cache->ptr;
-	uint64_t number_of_lines = lim->no_logs;
+	unsigned long number_of_lines = lim->no_logs;
 	char buffer[128];
+	int i;
+	
 	sprintf(buffer, "%ld", number_of_lines);
 	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);
 
-	for (int i = 0; i < number_of_lines; i++) {
+	for (i = 0; i < number_of_lines; i++) {
 		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
 			 LMC_SEND_FLAGS);
 	}
@@ -395,6 +405,8 @@ int lmc_get_command(struct lmc_client *client)
 	struct lmc_command cmd;
 	struct lmc_client_logline *log;
 
+	int flag = 0;
+	
 	err = -1;
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -423,7 +435,7 @@ int lmc_get_command(struct lmc_client *client)
 			goto end;
 		}
 	}
-	int flag = 0;
+	
 	switch (cmd.op->code) {
 	case LMC_CONNECT:
 		// TODO: cand e cachesize full

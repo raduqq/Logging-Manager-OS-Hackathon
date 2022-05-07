@@ -112,7 +112,16 @@ void lmc_init_server_os(void)
  *
  * TODO: Implement proper handling logic.
  */
-int lmc_init_client_cache(struct lmc_cache *cache) { return 0; }
+int lmc_init_client_cache(struct lmc_cache *cache) { 
+	void *addr_res = VirtualAlloc(NULL, 4096, MEM_RESERVE, PAGE_READWRITE);
+	void *addr = VirtualAlloc(addr_res, 4096, MEM_COMMIT, PAGE_READWRITE);
+	//void *addr = mmap(NULL, sizeof(struct log_in_memory), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+	cache->ptr = addr;
+	((struct log_in_memory *)cache->ptr)->no_logs = 0;
+	((struct log_in_memory *)cache->ptr)->no_logs_stored_on_disk = 0;
+	((struct log_in_memory *)cache->ptr)->list_of_logs = NULL;
+	cache->pages = 0;
+	return 0; }
 
 /**
  * OS-specific function that handles adding a log line to the cache.
@@ -125,7 +134,37 @@ int lmc_init_client_cache(struct lmc_cache *cache) { return 0; }
  * TODO: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
-int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
+int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { 
+
+	int page_size = 4096;
+
+	struct log_in_memory *lim = client->cache->ptr;
+	void *newAddr, *addr_res;
+	
+	if (lim->no_logs == 0) {
+		addr_res = VirtualAlloc(NULL, page_size, MEM_RESERVE, PAGE_READWRITE);
+		lim->list_of_logs = VirtualAlloc(addr_res, page_size, MEM_COMMIT, PAGE_READWRITE);
+		client->cache->pages = 1;
+	} else {
+		if ((lim->no_logs + 1) * sizeof(struct lmc_client_logline) < client->cache->pages * page_size) {
+			// imi incape in memorie pentru inca un log
+
+		} else {
+			// trebuie sa mai aloc o pagina
+			addr_res = VirtualAlloc(NULL, (client->cache->pages + 1) * page_size, MEM_RESERVE, PAGE_READWRITE);
+			newAddr = VirtualAlloc(addr_res, (client->cache->pages + 1) * page_size, MEM_COMMIT, PAGE_READWRITE);
+			memcpy(newAddr, lim->list_of_logs, lim->no_logs * sizeof(struct lmc_client_logline));
+			VirtualFree(lim->list_of_logs, client->cache->pages * page_size, MEM_DECOMMIT);
+			lim->list_of_logs = newAddr;
+		}
+	}
+
+	memcpy(&(lim->list_of_logs[lim->no_logs]), log, sizeof(struct lmc_client_logline));
+	lim->no_logs++;
+
+	return 0;
+
+}
 
 /**
  * OS-specific function that handles flushing the cache to disk,
@@ -136,7 +175,33 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { 
  *
  * TODO: Implement proper handling logic.
  */
-int lmc_flush_os(struct lmc_client *client) { return 0; }
+int lmc_flush_os(struct lmc_client *client) { 
+	struct log_in_memory *lim = client->cache->ptr;
+	char buffer[512];
+	HANDLE fd;
+	int i;
+	int bytesWritten = 0;
+	
+	sprintf(buffer, "%s/%s.log", "logs_logmemcache", client->cache->service_name);
+	lmc_init_logdir("logs_logmemcache");
+	lmc_rotate_logfile(buffer);
+	// int fd = open(buffer, O_WRONLY | O_CREAT);
+	fd = CreateFile(buffer, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	
+	if (fd < 0) {
+		printf("eroare! %d\n", fd);
+	}
+	for (i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++) {
+		WriteFile(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]), &bytesWritten, NULL);
+		//write(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]));
+	}
+
+	lim->no_logs_stored_on_disk = lim->no_logs;
+	// close(fd);
+	CloseHandle(fd);
+	return 0; 
+
+}
 
 /**
  * OS-specific function that handles client unsubscribe requests.
@@ -148,4 +213,24 @@ int lmc_flush_os(struct lmc_client *client) { return 0; }
  * TODO: Implement proper handling logic. Must flush the cache to disk and
  * deallocate any structures associated with the client.
  */
-int lmc_unsubscribe_os(struct lmc_client *client) { return 0; }
+int lmc_unsubscribe_os(struct lmc_client *client) { 
+
+	int page_size = 4096;
+	
+	struct log_in_memory *lim;
+	// flush them maybe?
+	lmc_flush_os(client);
+
+	// free the fields
+	free(client->cache->service_name);
+
+	// free cache with munmap
+	lim = client->cache->ptr;
+	VirtualFree(lim->list_of_logs, client->cache->pages * page_size, MEM_DECOMMIT);
+
+	VirtualFree(lim, sizeof(struct log_in_memory), MEM_DECOMMIT);
+
+	free(client->cache);
+	return 0;
+
+ }

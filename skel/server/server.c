@@ -320,8 +320,6 @@ static int lmc_send_loglines(struct lmc_client *client)
 
 static int is_in_interval(char *time, char *start, char *end)
 {
-	int tc, ts, te;
-
 	if (end[0] == '\0') {
 		// nu exista end
 		return strcmp(time, start) >= 0;

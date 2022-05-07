@@ -106,6 +106,43 @@ static int lmc_add_client(struct lmc_client *client, char *name)
 found:
 	return err;
 }
+/**
+ * Handle client connect
+ *
+ *
+ * @param client Client structure
+ * @param name Client name
+ * @return 1 if error, 0 if good
+ */
+static int lmc_connect_client(struct lmc_client *client, char *name)
+{
+	int err = -1;
+	size_t i;
+
+	for (i = 0; i < lmc_cache_count; i++) {
+		if (lmc_caches[i] == NULL)
+			continue;
+		if (lmc_caches[i]->service_name == NULL)
+			continue;
+		if (strcmp(lmc_caches[i]->service_name, name) == 0) {
+			client->cache = lmc_caches[i];
+			goto found;
+		}
+	}
+
+	if (lmc_cache_count == lmc_max_caches) {
+		return -1;
+	}
+
+	client->cache = malloc(sizeof(*client->cache));
+	client->cache->service_name = strdup(name);
+	lmc_caches[lmc_cache_count] = client->cache;
+	lmc_cache_count++;
+
+	err = lmc_init_client_cache(client->cache);
+found:
+	return err;
+}
 
 /**
  * Handle client disconnect.
@@ -116,7 +153,40 @@ found:
  *
  * TODO: Implement proper handling logic.
  */
-static int lmc_disconnect_client(struct lmc_client *client) { return 0; }
+static int lmc_disconnect_client(struct lmc_client *client)
+{
+	int err = -1;
+	size_t i;
+
+	printf("%s\n", client->cache->service_name);
+
+	for (i = 0; i < lmc_cache_count; i++) {
+		if (lmc_caches[i] == NULL)
+			continue;
+		if (lmc_caches[i]->service_name == NULL)
+			continue;
+		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0) {
+			// remove this from the array
+			for (int j = i + 1; j < lmc_cache_count; j++) {
+				lmc_caches[j - 1] = lmc_caches[j];
+			}
+			lmc_cache_count--;
+
+			// flush them maybe?
+
+			// free the fields
+			free(client->cache->service_name);
+			// free cache with munmap
+
+			free(client->cache);
+			err = 0;
+			goto found;
+		}
+	}
+found:
+	return err;
+	return 0;
+}
 
 /**
  * Handle unsubscription requests.
@@ -278,7 +348,8 @@ int lmc_get_command(struct lmc_client *client)
 
 	switch (cmd.op->code) {
 	case LMC_CONNECT:
-		err = lmc_add_client(client, cmd.data);
+		err = lmc_connect_client(client, cmd.data); // lmc_add_client(client, cmd.data);
+		printf("debug: %d\n", err);
 		break;
 	case LMC_SUBSCRIBE:
 		err = lmc_add_client(client, cmd.data);

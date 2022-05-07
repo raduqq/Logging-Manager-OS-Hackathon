@@ -210,7 +210,11 @@ static int lmc_unsubscribe_client(struct lmc_client *client) { return 0; }
  * TODO: Implement proper handling logic.
  */
 
-static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
+static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
+{
+	lmc_add_log_os(client, log);
+	return 0;
+}
 
 /**
  * Flush client logs to disk.
@@ -248,7 +252,19 @@ static int lmc_send_stats(struct lmc_client *client) { return 0; }
  *
  * TODO: Implement proper handling logic.
  */
-static int lmc_send_loglines(struct lmc_client *client) { return 0; }
+static int lmc_send_loglines(struct lmc_client *client)
+{
+	struct log_in_memory *lim = client->cache->ptr;
+	uint64_t number_of_lines = lim->no_logs;
+	printf("debug no_lines: %d\n", number_of_lines);
+	lmc_send(client->client_sock, &number_of_lines, sizeof(uint64_t), LMC_SEND_FLAGS);
+
+	for (int i = 0; i < number_of_lines; i++) {
+		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
+			 LMC_SEND_FLAGS);
+	}
+	return 0;
+}
 
 /**
  * Parse a command from the client. The command must be in the following format:

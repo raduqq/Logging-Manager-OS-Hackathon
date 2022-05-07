@@ -33,18 +33,20 @@ char *lmc_logfile_path;
  */
 static int lmc_client_function(SOCKET client_sock)
 {
-
 	int rc;
 	struct lmc_client *client;
 
 	client = lmc_create_client(client_sock);
 
-	while (1) {
+	// Endlessly get & resolve commands
+	while (1)
+	{
 		rc = lmc_get_command(client);
 		if (rc == -1)
 			break;
 	}
-	printf("debug: sterg socketul");
+
+	// Free resources
 	close(client_sock);
 	free(client);
 
@@ -74,41 +76,44 @@ void lmc_init_server_os(void)
 	server.sin_port = htons(LMC_SERVER_PORT);
 	server.sin_addr.s_addr = inet_addr(LMC_SERVER_IP);
 
-	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
+	{
 		perror("Could not bind");
 		exit(1);
 	}
 
-	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0) {
+	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0)
+	{
 		perror("Error while listening");
 		exit(1);
 	}
 
-	while (1) {
+	while (1)
+	{
 		memset(&client, 0, sizeof(struct sockaddr_in));
 		client_size = sizeof(struct sockaddr_in);
 		client_sock = accept(sock, (struct sockaddr *)&client, (socklen_t *)&client_size);
 
-		if (client_sock < 0) {
+		if (client_sock < 0)
+		{
 			perror("Error while accepting clients");
 		}
 
 		pid_t client_pid = fork();
 
-		switch (client_pid) {
+		switch (client_pid)
+		{
 		case -1:
 			// Fork error
 			DIE(client_pid, "fork client_pid");
 			break;
 		case 0:
 			// Client process
-
 			lmc_client_function(client_sock);
 			goto end_of_function;
 			break;
 		default:
 			// Parent process should close the pipe
-			printf("ajung aici\n");
 			close(client_sock);
 			break;
 		}
@@ -131,12 +136,18 @@ end_of_function:
 
 int lmc_init_client_cache(struct lmc_cache *cache)
 {
+	// Beginning of mapped addresses
 	void *addr = mmap(NULL, sizeof(struct log_in_memory), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 	cache->ptr = addr;
+
+	// Pointer to log struct
 	((struct log_in_memory *)cache->ptr)->no_logs = 0;
 	((struct log_in_memory *)cache->ptr)->no_logs_stored_on_disk = 0;
 	((struct log_in_memory *)cache->ptr)->list_of_logs = NULL;
+
+	// Pages
 	cache->pages = 0;
+
 	return 0;
 }
 
@@ -157,23 +168,33 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
 
 	struct log_in_memory *lim = client->cache->ptr;
 
-	if (lim->no_logs == 0) {
+	// If no pages allocated, allocate the first
+	if (lim->no_logs == 0)
+	{
 		lim->list_of_logs = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 		client->cache->pages = 1;
-	} else {
-		if ((lim->no_logs + 1) * sizeof(struct lmc_client_logline) < client->cache->pages * page_size) {
-			// imi incape in memorie pentru inca un log
+	}
+	else
+	{
+		// If space is full, need to allocate one more page
+		if ((lim->no_logs + 1) * sizeof(struct lmc_client_logline) >= client->cache->pages * page_size)
+		{
+			// Map address
+			void *new_addr = mmap(NULL, (client->cache->pages + 1) * page_size, PROT_READ | PROT_WRITE,
+								 MAP_ANON | MAP_SHARED, -1, 0);
 
-		} else {
-			// trebuie sa mai aloc o pagina
-			void *newAddr = mmap(NULL, (client->cache->pages + 1) * page_size, PROT_READ | PROT_WRITE,
-					     MAP_ANON | MAP_SHARED, -1, 0);
-			memcpy(newAddr, lim->list_of_logs, lim->no_logs * sizeof(struct lmc_client_logline));
+			// Copy logs to new address
+			memcpy(new_addr, lim->list_of_logs, lim->no_logs * sizeof(struct lmc_client_logline));
+
+			// Unmap previoous address
 			munmap(lim->list_of_logs, client->cache->pages * page_size);
-			lim->list_of_logs = newAddr;
+
+			// Point list of logs to new address
+			lim->list_of_logs = new_addr;
 		}
 	}
 
+	// Enough space left for logging
 	memcpy(&(lim->list_of_logs[lim->no_logs]), log, sizeof(struct lmc_client_logline));
 	lim->no_logs++;
 
@@ -191,20 +212,27 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  */
 int lmc_flush_os(struct lmc_client *client)
 {
-	//
 	struct log_in_memory *lim = client->cache->ptr;
+
+	// Get logfile name
 	char buffer[512];
 	sprintf(buffer, "%s/%s.log", "logs_logmemcache", client->cache->service_name);
+
+	// Init log dir & file
 	lmc_init_logdir("logs_logmemcache");
 	lmc_rotate_logfile(buffer);
+
+	// Open file to write in
 	int fd = open(buffer, O_WRONLY | O_CREAT);
-	if (fd < 0) {
-		printf("eroare! %d\n", fd);
-	}
-	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++) {
+	DIE(fd < 0, "flush open error");
+	
+	// Write to logfile
+	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++)
+	{
 		write(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]));
 	}
 
+	// Update disk storage stats
 	lim->no_logs_stored_on_disk = lim->no_logs;
 	close(fd);
 
@@ -225,18 +253,18 @@ int lmc_unsubscribe_os(struct lmc_client *client)
 {
 	int page_size = getpagesize();
 
-	// flush them maybe?
+	// Flush client data to disk
 	lmc_flush_os(client);
 
-	// free the fields
-	free(client->cache->service_name);
-
-	// free cache with munmap
+	// Free cache
 	struct log_in_memory *lim = client->cache->ptr;
 	munmap(lim->list_of_logs, client->cache->pages * page_size);
 
+	// Free log structure
 	munmap(lim, sizeof(struct log_in_memory));
 
+	// Free client memory
+	free(client->cache->service_name);
 	free(client->cache);
 	return 0;
 }

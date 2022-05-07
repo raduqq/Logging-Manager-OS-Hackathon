@@ -41,7 +41,6 @@ struct lmc_cache {
  * @field cache: Pointer to the cache allocated for this client.
  */
 struct lmc_client {
-	int isOnline;
 	SOCKET client_sock;
 	struct lmc_cache *cache;
 };
@@ -60,7 +59,6 @@ struct lmc_command {
  * @brief structura care sta in memorie, care tine minte array-ul de loguri
  * Structura tine minte un array de loguri si numarul de loguri.
  * Array-ul va fi alocat si dezalocat cu mmap, respectiv munmap
- * TODO: Read about remap
  */
 struct log_in_memory {
 	int no_logs;

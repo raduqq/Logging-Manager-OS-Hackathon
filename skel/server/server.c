@@ -298,13 +298,17 @@ static int lmc_send_loglines(struct lmc_client *client)
 	struct log_in_memory *lim = client->cache->ptr;
 	uint64_t number_of_lines = lim->no_logs;
 	char buffer[128];
+
+	// Send number of log lines
 	sprintf(buffer, "%ld", number_of_lines);
 	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);
 
+	// Send each log line
 	for (int i = 0; i < number_of_lines; i++) {
 		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
 			 LMC_SEND_FLAGS);
 	}
+
 	return 0;
 }
 
@@ -365,8 +369,10 @@ static int lmc_validate_arg(const char *line, size_t len)
  */
 struct lmc_client_logline *lmc_create_logline(struct lmc_command cmd)
 {
+	// Alloc struct
 	struct lmc_client_logline *log = malloc(sizeof(struct lmc_client_logline));
 
+	// Copy data to fields
 	memcpy(log->time, cmd.data, LMC_TIME_SIZE);
 	log->time[LMC_TIME_SIZE - 1] = '\0';
 
@@ -426,11 +432,9 @@ int lmc_get_command(struct lmc_client *client)
 	int flag = 0;
 	switch (cmd.op->code) {
 	case LMC_CONNECT:
-		// TODO: cand e cachesize full
 		err = lmc_connect_client(client, cmd.data);
 		break;
 	case LMC_SUBSCRIBE:
-		// TODO: cand e cachesize full
 		err = lmc_add_client(client, cmd.data);
 		break;
 	case LMC_STAT:
@@ -479,6 +483,7 @@ end:
 	if (flag == 0) {
 		return lmc_send(client->client_sock, response, LMC_LINE_SIZE, LMC_SEND_FLAGS);
 	}
+
 	lmc_send(client->client_sock, response, LMC_LINE_SIZE, LMC_SEND_FLAGS);
 	return -1;
 }

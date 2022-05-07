@@ -191,10 +191,12 @@ lmc_get_logs(struct lmc_conn *conn, time_t t1, time_t t2, uint64_t *logs)
 
 	op = lmc_get_op(LMC_GETLOGS);
 	len = snprintf(buffer, sizeof(buffer), "%s", op->op_str);
+
 	if (lmc_send(conn->socket, buffer, len, 0) < 0) {
 		fprintf(stderr, "Error while getting logs from server\n");
 		return NULL;
 	}
+	
 	num_logs = 0;
 
 	memset(response, 0, sizeof(response));

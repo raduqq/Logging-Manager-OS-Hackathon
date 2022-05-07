@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-
 #include "../../include/server.h"
 
 char *lmc_logfile_path;
@@ -32,19 +31,38 @@ char *lmc_logfile_path;
 static int
 lmc_client_function(SOCKET client_sock)
 {
-	int rc;
-	struct lmc_client *client;
+	pid_t client_pid = fork();
+	pid_t wait_ret;
+	int status;
 
-	client = lmc_create_client(client_sock);
+	switch (client_pid)
+	{
+	case -1:
+		// Fork error
+		DIE(client_pid, "fork client_pid");
+		break;
+	case 0:
+		// Client process
+		int rc;
+		struct lmc_client *client;
 
-	while (1) {
-		rc = lmc_get_command(client);
-		if (rc == -1)
-			break;
+		client = lmc_create_client(client_sock);
+
+		while (1)
+		{
+			rc = lmc_get_command(client);
+			if (rc == -1)
+				break;
+		}
+
+		close(client_sock);
+		free(client);
+	default:
+		// Parent process
+		wait_ret = waitpid(client_pid, &status, 0);
+		DIE(wait_ret < 0, "waitpid client_pid");
+		break;
 	}
-
-	close(client_sock);
-	free(client);
 
 	return 0;
 }
@@ -53,8 +71,7 @@ lmc_client_function(SOCKET client_sock)
  * Server main loop function. Opens a socket in listening mode and waits for
  * connections.
  */
-void
-lmc_init_server_os(void)
+void lmc_init_server_os(void)
 {
 	int sock, client_size, client_sock;
 	struct sockaddr_in server, client;
@@ -67,29 +84,33 @@ lmc_init_server_os(void)
 		return;
 
 	opten = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opten, sizeof(opten));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&opten, sizeof(opten));
 
 	server.sin_family = AF_INET;
 	server.sin_port = htons(LMC_SERVER_PORT);
 	server.sin_addr.s_addr = inet_addr(LMC_SERVER_IP);
 
-	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
+	{
 		perror("Could not bind");
 		exit(1);
 	}
 
-	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0) {
+	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0)
+	{
 		perror("Error while listening");
 		exit(1);
 	}
 
-	while (1) {
+	while (1)
+	{
 		memset(&client, 0, sizeof(struct sockaddr_in));
 		client_size = sizeof(struct sockaddr_in);
 		client_sock = accept(sock, (struct sockaddr *)&client,
-				(socklen_t *)&client_size);
+							 (socklen_t *)&client_size);
 
-		if (client_sock < 0) {
+		if (client_sock < 0)
+		{
 			perror("Error while accepting clients");
 		}
 
@@ -104,13 +125,10 @@ lmc_init_server_os(void)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * Implement proper handling logic.
  */
-int
-lmc_init_client_cache(struct lmc_cache *cache)
+int lmc_init_client_cache(struct lmc_cache *cache)
 {
-	printf("%s", cache->service_name);
-
 	cache->ptr = NULL;
 	cache->pages = 0;
 
@@ -128,8 +146,7 @@ lmc_init_client_cache(struct lmc_cache *cache)
  * TODO: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
-int
-lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
+int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
 {
 	return 0;
 }
@@ -143,8 +160,7 @@ lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * TODO: Implement proper handling logic.
  */
-int
-lmc_flush_os(struct lmc_client *client)
+int lmc_flush_os(struct lmc_client *client)
 {
 	return 0;
 }
@@ -159,8 +175,7 @@ lmc_flush_os(struct lmc_client *client)
  * TODO: Implement proper handling logic. Must flush the cache to disk and
  * deallocate any structures associated with the client.
  */
-int
-lmc_unsubscribe_os(struct lmc_client *client)
+int lmc_unsubscribe_os(struct lmc_client *client)
 {
 	return 0;
 }

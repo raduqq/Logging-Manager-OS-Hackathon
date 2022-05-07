@@ -24,7 +24,7 @@ din laboratorul de SD, 2019 - 2020.
 ===============================================================================
 ## Functionalitati extra
 
-* Autentificare - Implementata DOAR pe Linux
+* [LINUX] Autentificare
   - Prezent pe branch-ul auth al repo-ului
   - Retine un Hashtable de perechi <user:parola> si inainte de fiecare accept
   se cer de la utilizator user si parola, de la tastatura
@@ -35,10 +35,11 @@ din laboratorul de SD, 2019 - 2020.
   - Daca vreti sa rulati checker-ul impreuna cu functionalitatea de auth,
   am inclus perechea <user:"a" ; pass:"a">, pentru a facilita autentificarea
   
-* Get logs in interval
+* [LINUX + WINDOWS] Get logs in interval
   - Doar trebuie adaugate optiunile [t1 [t2]] in cazul comenzii getlogs
 
-* Modificam fisierul de log vechi
+* [LINUX + WINDOWS] Modificam fisierul de log vechi - cand facem flush, redenumim fisierul de log
+vechi
 
 ===============================================================================
 ## Limitari

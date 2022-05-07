@@ -2,18 +2,19 @@
  * Hackathon SO: LogMemCacher
  * (c) 2020-2021, Operating Systems
  */
-#include <stdlib.h>
+#include "../../include/server.h"
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <arpa/inet.h>
-#include "../../include/server.h"
+#include <wait.h>
 
 char *lmc_logfile_path;
 
@@ -28,28 +29,26 @@ char *lmc_logfile_path;
  * TODO: The lmc_get_command function executes blocking operations. The server
  * is unable to handle multiple connections simultaneously.
  */
-static int
-lmc_client_function(SOCKET client_sock)
+static int lmc_client_function(SOCKET client_sock)
 {
 	pid_t client_pid = fork();
 	pid_t wait_ret;
 	int status;
 
-	switch (client_pid)
-	{
+	int rc;
+	struct lmc_client *client;
+
+	switch (client_pid) {
 	case -1:
 		// Fork error
 		DIE(client_pid, "fork client_pid");
 		break;
 	case 0:
 		// Client process
-		int rc;
-		struct lmc_client *client;
 
 		client = lmc_create_client(client_sock);
 
-		while (1)
-		{
+		while (1) {
 			rc = lmc_get_command(client);
 			if (rc == -1)
 				break;
@@ -59,8 +58,8 @@ lmc_client_function(SOCKET client_sock)
 		free(client);
 	default:
 		// Parent process
-		wait_ret = waitpid(client_pid, &status, 0);
-		DIE(wait_ret < 0, "waitpid client_pid");
+		// wait_ret = waitpid(client_pid, &status, 0);
+		// DIE(wait_ret < 0, "waitpid client_pid");
 		break;
 	}
 
@@ -90,27 +89,22 @@ void lmc_init_server_os(void)
 	server.sin_port = htons(LMC_SERVER_PORT);
 	server.sin_addr.s_addr = inet_addr(LMC_SERVER_IP);
 
-	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
-	{
+	if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		perror("Could not bind");
 		exit(1);
 	}
 
-	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0)
-	{
+	if (listen(sock, LMC_DEFAULT_CLIENTS_NO) < 0) {
 		perror("Error while listening");
 		exit(1);
 	}
 
-	while (1)
-	{
+	while (1) {
 		memset(&client, 0, sizeof(struct sockaddr_in));
 		client_size = sizeof(struct sockaddr_in);
-		client_sock = accept(sock, (struct sockaddr *)&client,
-							 (socklen_t *)&client_size);
+		client_sock = accept(sock, (struct sockaddr *)&client, (socklen_t *)&client_size);
 
-		if (client_sock < 0)
-		{
+		if (client_sock < 0) {
 			perror("Error while accepting clients");
 		}
 
@@ -146,10 +140,7 @@ int lmc_init_client_cache(struct lmc_cache *cache)
  * TODO: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
-int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
-{
-	return 0;
-}
+int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
 
 /**
  * OS-specific function that handles flushing the cache to disk,
@@ -160,10 +151,7 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * TODO: Implement proper handling logic.
  */
-int lmc_flush_os(struct lmc_client *client)
-{
-	return 0;
-}
+int lmc_flush_os(struct lmc_client *client) { return 0; }
 
 /**
  * OS-specific function that handles client unsubscribe requests.
@@ -175,7 +163,4 @@ int lmc_flush_os(struct lmc_client *client)
  * TODO: Implement proper handling logic. Must flush the cache to disk and
  * deallocate any structures associated with the client.
  */
-int lmc_unsubscribe_os(struct lmc_client *client)
-{
-	return 0;
-}
+int lmc_unsubscribe_os(struct lmc_client *client) { return 0; }

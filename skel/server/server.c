@@ -82,21 +82,18 @@ static int lmc_add_client(struct lmc_client *client, char *name)
 	int err = 0;
 	size_t i;
 
-	for (i = 0; i < lmc_cache_count; i++)
-	{
+	for (i = 0; i < lmc_cache_count; i++) {
 		if (lmc_caches[i] == NULL)
 			continue;
 		if (lmc_caches[i]->service_name == NULL)
 			continue;
-		if (strcmp(lmc_caches[i]->service_name, name) == 0)
-		{
+		if (strcmp(lmc_caches[i]->service_name, name) == 0) {
 			client->cache = lmc_caches[i];
 			goto found;
 		}
 	}
 
-	if (lmc_cache_count == lmc_max_caches)
-	{
+	if (lmc_cache_count == lmc_max_caches) {
 		return -1;
 	}
 
@@ -268,8 +265,7 @@ static void lmc_parse_command(struct lmc_command *cmd, char *string, ssize_t *da
 	line = strchr(command, ' ');
 
 	cmd->data = NULL;
-	if (line != NULL)
-	{
+	if (line != NULL) {
 		line[0] = '\0';
 		cmd->data = strdup(line + 1);
 		*datalen -= strlen(command) + 1;
@@ -332,35 +328,32 @@ int lmc_get_command(struct lmc_client *client)
 		return -1;
 
 	lmc_parse_command(&cmd, buffer, &recv_size);
-	if (recv_size > LMC_LINE_SIZE)
-	{
+	if (recv_size > LMC_LINE_SIZE) {
 		reply_msg = "message too long";
 		goto end;
 	}
 
-	if (cmd.op->requires_auth && client->cache->service_name == NULL)
-	{
+	if (cmd.op->requires_auth && client->cache->service_name == NULL) {
 		reply_msg = "authentication required";
 		goto end;
 	}
 
-	if (cmd.data != NULL)
-	{
+	if (cmd.data != NULL) {
 		err = lmc_validate_arg(cmd.data, recv_size);
-		if (err != 0)
-		{
+		if (err != 0) {
 			reply_msg = "invalid argument provided";
 			goto end;
 		}
 	}
 
-	switch (cmd.op->code)
-	{
+	switch (cmd.op->code) {
 	case LMC_CONNECT:
-		err = lmc_connect_client(client, cmd.data); // lmc_add_client(client, cmd.data);
+		// TODO: cand e cachesize full
+		err = lmc_connect_client(client, cmd.data);
 		printf("debug: %d\n", err);
 		break;
 	case LMC_SUBSCRIBE:
+		// TODO: cand e cachesize full
 		err = lmc_add_client(client, cmd.data);
 		break;
 	case LMC_STAT:

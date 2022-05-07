@@ -109,6 +109,11 @@ lmc_init_server_os(void)
 int
 lmc_init_client_cache(struct lmc_cache *cache)
 {
+	printf("%s", cache->service_name);
+
+	cache->ptr = NULL;
+	cache->pages = 0;
+
 	return 0;
 }
 

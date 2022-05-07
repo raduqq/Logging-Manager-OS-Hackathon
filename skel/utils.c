@@ -9,17 +9,17 @@
 
 #ifdef __unix__
 
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
 #include <unistd.h>
 
 #elif defined(_WIN32)
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #endif
 
 #include "include/utils.h"
@@ -28,17 +28,16 @@
  * List of operation descriptors. See structure declaration for details.
  */
 const struct lmc_op lmc_ops[] = {
-	{ LMC_CONNECT,		"connect",	"client connected",	0 },
-	{ LMC_SUBSCRIBE,	"subscribe",	"client subscribed",	1 },
-	{ LMC_STAT,		"stat",		"received stats",	1 },
-	{ LMC_ADD,		"add",		"log added",		1 },
-	{ LMC_FLUSH,		"flush",	"logs flushed",		1 },
-	{ LMC_DISCONNECT,	"disconnect", 	"client disconnected",	1 },
-	{ LMC_UNSUBSCRIBE,	"unsubcribe", 	"client unsubscribed",	1 },
-	{ LMC_GETLOGS,		"getlogs", 	"logs received",	1 },
-	{ LMC_UNKNOWN,		NULL,		"unknown command",	0 },
+    {LMC_CONNECT, "connect", "client connected", 0},
+    {LMC_SUBSCRIBE, "subscribe", "client subscribed", 1},
+    {LMC_STAT, "stat", "received stats", 1},
+    {LMC_ADD, "add", "log added", 1},
+    {LMC_FLUSH, "flush", "logs flushed", 1},
+    {LMC_DISCONNECT, "disconnect", "client disconnected", 1},
+    {LMC_UNSUBSCRIBE, "unsubcribe", "client unsubscribed", 1},
+    {LMC_GETLOGS, "getlogs", "logs received", 1},
+    {LMC_UNKNOWN, NULL, "unknown command", 0},
 };
-
 
 /**
  * Get an operation from the list descriptor based on its code.
@@ -49,8 +48,8 @@ const struct lmc_op lmc_ops[] = {
  * @return: Always returns a valid pointer. If the code is not found in the list
  *          the function returns the LMC_UNKNOWN's descriptor.
  */
-const struct lmc_op *
-lmc_get_op(enum lmc_op_code code) {
+const struct lmc_op *lmc_get_op(enum lmc_op_code code)
+{
 	int i;
 
 	for (i = 0; i < nitems(lmc_ops); i++)
@@ -68,8 +67,8 @@ lmc_get_op(enum lmc_op_code code) {
  * @return: Always returns a valid pointer. If the name is not found in the list
  *          the function returns the LMC_UNKNOWN's descriptor.
  */
-const struct lmc_op *
-lmc_get_op_by_str(const char *str) {
+const struct lmc_op *lmc_get_op_by_str(const char *str)
+{
 	int i;
 	const struct lmc_op *op;
 
@@ -94,13 +93,12 @@ lmc_get_op_by_str(const char *str) {
  *
  * @return: The amount of data transfered, or -1 otherwise.
  */
-static ssize_t
-lmc_xfer(SOCKET sock, const void *buf, size_t len, int flags, int dir)
+static ssize_t lmc_xfer(SOCKET sock, const void *buf, size_t len, int flags, int dir)
 {
 	ssize_t total, xfered, rc;
 	char *ptr = (char *)buf;
 
-	total = (ssize_t) len;
+	total = (ssize_t)len;
 	xfered = 0;
 	while (xfered < total) {
 		if (dir == 0)
@@ -134,8 +132,7 @@ lmc_xfer(SOCKET sock, const void *buf, size_t len, int flags, int dir)
  *
  * @return: The amount of data sent, or -1 otherwise.
  */
-ssize_t
-lmc_send(SOCKET sock, const void *buf, size_t len, int flags)
+ssize_t lmc_send(SOCKET sock, const void *buf, size_t len, int flags)
 {
 	ssize_t rc;
 	uint32_t buf_l;
@@ -161,8 +158,7 @@ lmc_send(SOCKET sock, const void *buf, size_t len, int flags)
  *
  * @return: The amount of data received, or -1 otherwise.
  */
-ssize_t
-lmc_recv(SOCKET sock, void *buf, size_t len, int flags)
+ssize_t lmc_recv(SOCKET sock, void *buf, size_t len, int flags)
 {
 	ssize_t rc;
 	uint32_t pack_size, buf_l;
@@ -179,7 +175,6 @@ lmc_recv(SOCKET sock, void *buf, size_t len, int flags)
 	return lmc_xfer(sock, buf, pack_size, flags, 1);
 }
 
-
 #ifdef __unix__
 /**
  * Convert the current time into a human-readable string.
@@ -190,8 +185,7 @@ lmc_recv(SOCKET sock, void *buf, size_t len, int flags)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-int
-lmc_crttime_to_str(char *result, size_t len, const char *fmt)
+int lmc_crttime_to_str(char *result, size_t len, const char *fmt)
 {
 	time_t t;
 	struct tm tm;
@@ -214,8 +208,7 @@ lmc_crttime_to_str(char *result, size_t len, const char *fmt)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-int
-lmc_rotate_logfile(char *filepath)
+int lmc_rotate_logfile(char *filepath)
 {
 	struct stat s;
 	int rc;
@@ -229,13 +222,12 @@ lmc_rotate_logfile(char *filepath)
 
 	if (s.st_mode & S_IFREG) {
 		/* file exists and is a regular file */
-		if (lmc_crttime_to_str(timeap, LMC_TIME_SIZE, LMC_TIME_FORMAT))
+		if (lmc_crttime_to_str(timeap, LMC_TIME_SIZE, LMC_FTIME_FORMAT))
 			return -1;
 
 		sprintf(new_name, "%s.%s", filepath, timeap);
 		rename(filepath, new_name);
-		fprintf(stderr, "File %s was renamed to %s\n",
-				filepath, new_name);
+		fprintf(stderr, "File %s was renamed to %s\n", filepath, new_name);
 	} else {
 		/* file exists, but is not regular file */
 		return -1;
@@ -252,8 +244,7 @@ lmc_rotate_logfile(char *filepath)
  * @return: 0 in case the directory already exists or could be created, -1
  *          otherwise.
  */
-int
-lmc_init_logdir(char *logfile_path)
+int lmc_init_logdir(char *logfile_path)
 {
 	struct stat s = {0};
 
@@ -274,8 +265,7 @@ lmc_init_logdir(char *logfile_path)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-int
-lmc_crttime_to_str(char *result, size_t len, const char *fmt)
+int lmc_crttime_to_str(char *result, size_t len, const char *fmt)
 {
 	time_t t;
 	struct tm tm;
@@ -298,8 +288,7 @@ lmc_crttime_to_str(char *result, size_t len, const char *fmt)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-int
-lmc_rotate_logfile(char *filepath)
+int lmc_rotate_logfile(char *filepath)
 {
 	DWORD fileAttribute;
 	char timeap[LMC_TIME_SIZE];
@@ -318,8 +307,7 @@ lmc_rotate_logfile(char *filepath)
 
 		snprintf(new_name, MAX_PATH, "%s.%s", filepath, timeap);
 		MoveFile(filepath, new_name);
-		fprintf(stderr, "File %s was renamed to %s\n",
-				filepath, new_name);
+		fprintf(stderr, "File %s was renamed to %s\n", filepath, new_name);
 	} else {
 		/* file exist, but is not regular file */
 		return -1;
@@ -336,8 +324,7 @@ lmc_rotate_logfile(char *filepath)
  * @return: 0 in case the directory already exists or could be created, -1
  *          otherwise.
  */
-int
-lmc_init_logdir(char *logfile_path)
+int lmc_init_logdir(char *logfile_path)
 {
 	DWORD fileAttribute;
 
@@ -352,6 +339,5 @@ lmc_init_logdir(char *logfile_path)
 		return 0;
 	else
 		return -1;
-
 }
 #endif

@@ -26,8 +26,10 @@ char *lmc_logfile_path;
  *
  * @return: This function always returns 0.
  *
- * TODO: The lmc_get_command function executes blocking operations. The server
+ * The lmc_get_command function executes blocking operations. The server
  * is unable to handle multiple connections simultaneously.
+ * 
+ * Server deals with this problem by creating a process for every client
  */
 static int lmc_client_function(SOCKET client_sock)
 {
@@ -120,6 +122,8 @@ void lmc_init_server_os(void)
  * @return: 0 in case of success, or -1 otherwise.
  *
  * Implement proper handling logic.
+ * 
+ * Initialize uninitialized fields
  */
 int lmc_init_client_cache(struct lmc_cache *cache)
 {

@@ -370,19 +370,19 @@ int lmc_get_command(struct lmc_client *client)
 		err = lmc_send_stats(client);
 		break;
 	case LMC_ADD:
-		/* TODO parse the client data and create a log line structure */
-
+		/* Parse the client data and create a log line structure */
 		log = malloc(sizeof(struct lmc_client_logline));
 
 		memcpy(log->time, cmd.data, LMC_TIME_SIZE);
 		log->time[LMC_TIME_SIZE - 1] = '\0';
+		
 		memcpy(log->logline, cmd.data + LMC_TIME_SIZE, LMC_LOGLINE_SIZE);
 		log->logline[LMC_LOGLINE_SIZE - 1] = '\0';
-		printf("%s\n", log->time);
-		printf("%s\n", log->logline);
 
+		// Call command handler
 		err = lmc_add_log(client, log);
 
+		// Free aux resources	
 		free(log);
 		break;
 	case LMC_FLUSH:

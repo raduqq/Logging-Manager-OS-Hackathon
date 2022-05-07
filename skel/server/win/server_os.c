@@ -6,13 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#pragma comment(lib,"Ws2_32.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 #include "../../include/server.h"
 
+#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <windows.h>
 
 char *lmc_logfile_path;
 
@@ -27,8 +27,7 @@ char *lmc_logfile_path;
  * TODO: The lmc_get_command function executes blocking operations. The server
  * is unable to handle multiple connections simultaneously.
  */
-static DWORD WINAPI
-lmc_client_function(SOCKET client_sock)
+static DWORD WINAPI lmc_client_function(SOCKET client_sock)
 {
 	int rc;
 	struct lmc_client *client;
@@ -51,8 +50,7 @@ lmc_client_function(SOCKET client_sock)
  * Server main loop function. Opens a socket in listening mode and waits for
  * connections.
  */
-void
-lmc_init_server_os(void)
+void lmc_init_server_os(void)
 {
 	SOCKET sock, client_sock;
 	int client_size;
@@ -63,7 +61,7 @@ lmc_init_server_os(void)
 
 	memset(&server, 0, sizeof(struct sockaddr_in));
 
-	rc = WSAStartup(MAKEWORD(2,2), &wsaData);
+	rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (rc != NO_ERROR)
 		return;
 
@@ -74,7 +72,7 @@ lmc_init_server_os(void)
 	}
 
 	opten = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opten, sizeof(opten));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&opten, sizeof(opten));
 
 	server.sin_family = AF_INET;
 	server.sin_port = htons(LMC_SERVER_PORT);
@@ -95,8 +93,7 @@ lmc_init_server_os(void)
 	while (1) {
 		memset(&client, 0, sizeof(struct sockaddr_in));
 		client_size = sizeof(struct sockaddr_in);
-		client_sock = accept(sock, (SOCKADDR *)&client,
-				(socklen_t*)&client_size);
+		client_sock = accept(sock, (SOCKADDR *)&client, (socklen_t *)&client_size);
 		if (client_sock == INVALID_SOCKET) {
 			perror("Error while accepting clients");
 			continue;
@@ -104,7 +101,6 @@ lmc_init_server_os(void)
 
 		lmc_client_function(client_sock);
 	}
-
 }
 
 /**
@@ -116,11 +112,7 @@ lmc_init_server_os(void)
  *
  * TODO: Implement proper handling logic.
  */
-int
-lmc_init_client_cache(struct lmc_cache *cache)
-{
-	return 0;
-}
+int lmc_init_client_cache(struct lmc_cache *cache) { return 0; }
 
 /**
  * OS-specific function that handles adding a log line to the cache.
@@ -133,11 +125,7 @@ lmc_init_client_cache(struct lmc_cache *cache)
  * TODO: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
-int
-lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
-{
-	return 0;
-}
+int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
 
 /**
  * OS-specific function that handles flushing the cache to disk,
@@ -148,11 +136,7 @@ lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * TODO: Implement proper handling logic.
  */
-int
-lmc_flush_os(struct lmc_client *client)
-{
-	return 0;
-}
+int lmc_flush_os(struct lmc_client *client) { return 0; }
 
 /**
  * OS-specific function that handles client unsubscribe requests.
@@ -164,8 +148,4 @@ lmc_flush_os(struct lmc_client *client)
  * TODO: Implement proper handling logic. Must flush the cache to disk and
  * deallocate any structures associated with the client.
  */
-int
-lmc_unsubscribe_os(struct lmc_client *client)
-{
-	return 0;
-}
+int lmc_unsubscribe_os(struct lmc_client *client) { return 0; }

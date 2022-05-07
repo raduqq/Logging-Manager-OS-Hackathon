@@ -109,6 +109,43 @@ static int lmc_add_client(struct lmc_client *client, char *name)
 found:
 	return err;
 }
+/**
+ * Handle client connect
+ *
+ *
+ * @param client Client structure
+ * @param name Client name
+ * @return 1 if error, 0 if good
+ */
+static int lmc_connect_client(struct lmc_client *client, char *name)
+{
+	int err = -1;
+	size_t i;
+
+	for (i = 0; i < lmc_cache_count; i++) {
+		if (lmc_caches[i] == NULL)
+			continue;
+		if (lmc_caches[i]->service_name == NULL)
+			continue;
+		if (strcmp(lmc_caches[i]->service_name, name) == 0) {
+			client->cache = lmc_caches[i];
+			goto found;
+		}
+	}
+
+	if (lmc_cache_count == lmc_max_caches) {
+		return -1;
+	}
+
+	client->cache = malloc(sizeof(*client->cache));
+	client->cache->service_name = strdup(name);
+	lmc_caches[lmc_cache_count] = client->cache;
+	lmc_cache_count++;
+
+	err = lmc_init_client_cache(client->cache);
+found:
+	return err;
+}
 
 /**
  * Handle client disconnect.
@@ -199,6 +236,7 @@ found:
  *
  * TODO: Implement proper handling logic.
  */
+
 static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
 
 /**
@@ -361,9 +399,12 @@ int lmc_get_command(struct lmc_client *client)
 	switch (cmd.op->code)
 	{
 	case LMC_CONNECT:
-		err = lmc_add_client(client, cmd.data);
+		// TODO: cand e cachesize full
+		err = lmc_connect_client(client, cmd.data);
+		printf("debug: %d\n", err);
 		break;
 	case LMC_SUBSCRIBE:
+		// TODO: cand e cachesize full
 		err = lmc_add_client(client, cmd.data);
 		break;
 	case LMC_STAT:

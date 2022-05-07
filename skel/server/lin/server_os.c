@@ -33,33 +33,20 @@ char *lmc_logfile_path;
  */
 static int lmc_client_function(SOCKET client_sock)
 {
-	pid_t client_pid = fork();
 
 	int rc;
 	struct lmc_client *client;
 
-	switch (client_pid) {
-	case -1:
-		// Fork error
-		DIE(client_pid, "fork client_pid");
-		break;
-	case 0:
-		// Client process
+	client = lmc_create_client(client_sock);
 
-		client = lmc_create_client(client_sock);
-
-		while (1) {
-			rc = lmc_get_command(client);
-			if (rc == -1)
-				break;
-		}
-		printf("debug: sterg socketul");
-		close(client_sock);
-		free(client);
-	default:
-		// Parent process
-		break;
+	while (1) {
+		rc = lmc_get_command(client);
+		if (rc == -1)
+			break;
 	}
+	printf("debug: sterg socketul");
+	close(client_sock);
+	free(client);
 
 	return 0;
 }
@@ -106,8 +93,28 @@ void lmc_init_server_os(void)
 			perror("Error while accepting clients");
 		}
 
-		lmc_client_function(client_sock);
+		pid_t client_pid = fork();
+
+		switch (client_pid) {
+		case -1:
+			// Fork error
+			DIE(client_pid, "fork client_pid");
+			break;
+		case 0:
+			// Client process
+
+			lmc_client_function(client_sock);
+			goto end_of_function;
+			break;
+		default:
+			// Parent process should close the pipe
+			printf("ajung aici\n");
+			close(client_sock);
+			break;
+		}
 	}
+end_of_function:
+	return;
 }
 
 /**

@@ -167,7 +167,7 @@ static int lmc_disconnect_client(struct lmc_client *client)
 			continue;
 		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0) {
 			// TODO Terminate session
-
+			err = 0;
 			goto found;
 		}
 	}

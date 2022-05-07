@@ -26,8 +26,7 @@ static size_t lmc_max_caches;
 /**
  * Initialize client cache list on the server.
  */
-static void
-lmc_init_client_list(void)
+static void lmc_init_client_list(void)
 {
 	lmc_max_caches = LMC_DEFAULT_CLIENTS_NO;
 	lmc_caches = malloc(lmc_max_caches * sizeof(*lmc_caches));
@@ -37,8 +36,7 @@ lmc_init_client_list(void)
  * Initialize server - allocate initial cache list and start listening on the
  * server's socket.
  */
-static void
-lmc_init_server(void)
+static void lmc_init_server(void)
 {
 	lmc_init_client_list();
 	lmc_init_server_os();
@@ -53,8 +51,7 @@ lmc_init_server(void)
  * @return: A pointer to a client connection structure on success,
  *          or NULL otherwise.
  */
-struct lmc_client *
-lmc_create_client(SOCKET client_sock)
+struct lmc_client *lmc_create_client(SOCKET client_sock)
 {
 	struct lmc_client *client;
 
@@ -80,8 +77,7 @@ lmc_create_client(SOCKET client_sock)
  *
  * TODO: Must be able to handle the case when all caches are occupied.
  */
-static int
-lmc_add_client(struct lmc_client *client, char *name)
+static int lmc_add_client(struct lmc_client *client, char *name)
 {
 	int err = 0;
 	size_t i;
@@ -120,11 +116,7 @@ found:
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_disconnect_client(struct lmc_client *client)
-{
-	return 0;
-}
+static int lmc_disconnect_client(struct lmc_client *client) { return 0; }
 
 /**
  * Handle unsubscription requests.
@@ -135,11 +127,7 @@ lmc_disconnect_client(struct lmc_client *client)
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_unsubscribe_client(struct lmc_client *client)
-{
-	return 0;
-}
+static int lmc_unsubscribe_client(struct lmc_client *client) { return 0; }
 
 /**
  * Add a log line to the client's cache.
@@ -151,11 +139,7 @@ lmc_unsubscribe_client(struct lmc_client *client)
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
-{
-	return 0;
-}
+static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
 
 /**
  * Flush client logs to disk.
@@ -166,11 +150,7 @@ lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_flush(struct lmc_client *client)
-{
-	return 0;
-}
+static int lmc_flush(struct lmc_client *client) { return 0; }
 
 /**
  * Send stats about the stored logs to the client. Must not send the actual
@@ -184,11 +164,7 @@ lmc_flush(struct lmc_client *client)
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_send_stats(struct lmc_client *client)
-{
-	return 0;
-}
+static int lmc_send_stats(struct lmc_client *client) { return 0; }
 
 /**
  * Send the stored log lines to the client.
@@ -201,11 +177,7 @@ lmc_send_stats(struct lmc_client *client)
  *
  * TODO: Implement proper handling logic.
  */
-static int
-lmc_send_loglines(struct lmc_client *client)
-{
-	return 0;
-}
+static int lmc_send_loglines(struct lmc_client *client) { return 0; }
 
 /**
  * Parse a command from the client. The command must be in the following format:
@@ -215,8 +187,7 @@ lmc_send_loglines(struct lmc_client *client)
  * @param string: Command string;
  * @param datalen: The amount of data send with the command.
  */
-static void
-lmc_parse_command(struct lmc_command *cmd, char *string, ssize_t *datalen)
+static void lmc_parse_command(struct lmc_command *cmd, char *string, ssize_t *datalen)
 {
 	char *command, *line;
 
@@ -232,8 +203,7 @@ lmc_parse_command(struct lmc_command *cmd, char *string, ssize_t *datalen)
 
 	cmd->op = lmc_get_op_by_str(command);
 
-	printf("command = %s, line = %s\n", cmd->op->op_str,
-			cmd->data ? cmd->data : "null");
+	printf("command = %s, line = %s\n", cmd->op->op_str, cmd->data ? cmd->data : "null");
 
 	free(command);
 }
@@ -247,8 +217,7 @@ lmc_parse_command(struct lmc_command *cmd, char *string, ssize_t *datalen)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-static int
-lmc_validate_arg(const char *line, size_t len)
+static int lmc_validate_arg(const char *line, size_t len)
 {
 	size_t i;
 
@@ -269,8 +238,7 @@ lmc_validate_arg(const char *line, size_t len)
  *
  * @return: 0 in case of success, or -1 otherwise.
  */
-int
-lmc_get_command(struct lmc_client *client)
+int lmc_get_command(struct lmc_client *client)
 {
 	int err;
 	ssize_t recv_size;
@@ -310,6 +278,8 @@ lmc_get_command(struct lmc_client *client)
 
 	switch (cmd.op->code) {
 	case LMC_CONNECT:
+		err = lmc_add_client(client, cmd.data);
+		break;
 	case LMC_SUBSCRIBE:
 		err = lmc_add_client(client, cmd.data);
 		break;
@@ -318,8 +288,19 @@ lmc_get_command(struct lmc_client *client)
 		break;
 	case LMC_ADD:
 		/* TODO parse the client data and create a log line structure */
-		log = NULL;
+
+		log = malloc(sizeof(struct lmc_client_logline));
+
+		memcpy(log->time, cmd.data, LMC_TIME_SIZE);
+		log->time[LMC_TIME_SIZE - 1] = '\0';
+		memcpy(log->logline, cmd.data + LMC_TIME_SIZE, LMC_LOGLINE_SIZE);
+		log->logline[LMC_LOGLINE_SIZE - 1] = '\0';
+		printf("%s\n", log->time);
+		printf("%s\n", log->logline);
+
 		err = lmc_add_log(client, log);
+
+		free(log);
 		break;
 	case LMC_FLUSH:
 		err = lmc_flush(client);
@@ -350,12 +331,10 @@ end:
 	if (cmd.data != NULL)
 		free(cmd.data);
 
-	return lmc_send(client->client_sock, response, LMC_LINE_SIZE,
-			LMC_SEND_FLAGS);
+	return lmc_send(client->client_sock, response, LMC_LINE_SIZE, LMC_SEND_FLAGS);
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	setbuf(stdout, NULL);
 

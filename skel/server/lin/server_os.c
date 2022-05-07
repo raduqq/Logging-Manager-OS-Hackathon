@@ -148,7 +148,7 @@ int lmc_init_client_cache(struct lmc_cache *cache)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic. Must be able to dynamically resize the
+ * TODO DONE: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
 int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
@@ -187,7 +187,7 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * TODO DONE: Implement proper handling logic.
  */
 int lmc_flush_os(struct lmc_client *client)
 {
@@ -197,14 +197,12 @@ int lmc_flush_os(struct lmc_client *client)
 	sprintf(buffer, "%s/%s.log", "logs_logmemcache", client->cache->service_name);
 	lmc_init_logdir("logs_logmemcache");
 	lmc_rotate_logfile(buffer);
-	printf("debug file: %s\n", buffer);
 	int fd = open(buffer, O_WRONLY | O_CREAT);
 	if (fd < 0) {
 		printf("eroare! %d\n", fd);
 	}
 	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++) {
 		write(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]));
-		printf("voi scrie: %s\n", &(lim->list_of_logs[i]));
 	}
 
 	lim->no_logs_stored_on_disk = lim->no_logs;
@@ -220,7 +218,25 @@ int lmc_flush_os(struct lmc_client *client)
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic. Must flush the cache to disk and
+ * TODO DONE: Implement proper handling logic. Must flush the cache to disk and
  * deallocate any structures associated with the client.
  */
-int lmc_unsubscribe_os(struct lmc_client *client) { return 0; }
+int lmc_unsubscribe_os(struct lmc_client *client)
+{
+	int page_size = getpagesize();
+
+	// flush them maybe?
+	lmc_flush_os(client);
+
+	// free the fields
+	free(client->cache->service_name);
+
+	// free cache with munmap
+	struct log_in_memory *lim = client->cache->ptr;
+	munmap(lim->list_of_logs, client->cache->pages * page_size);
+
+	munmap(lim, sizeof(struct log_in_memory));
+
+	free(client->cache);
+	return 0;
+}

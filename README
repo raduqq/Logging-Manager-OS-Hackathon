@@ -25,6 +25,7 @@ din laboratorul de SD, 2019 - 2020.
 ## Functionalitati extra
 
 * Autentificare - Implementata DOAR pe Linux
+  - Prezent pe branch-ul auth al repo-ului
   - Retine un Hashtable de perechi <user:parola> si inainte de fiecare accept
   se cer de la utilizator user si parola, de la tastatura
   - Daca perechea nu este corecta, cererea este invalidata, iar utilizatorul

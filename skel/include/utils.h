@@ -38,6 +38,19 @@ typedef int ssize_t;
 
 #define nitems(arr)		(sizeof(arr) / sizeof(*arr))
 
+/* useful macro for handling error codes */
+#define DIE(assertion, call_description)  \
+	do                                    \
+	{                                     \
+		if (assertion)                    \
+		{                                 \
+			fprintf(stderr, "(%s, %d): ", \
+					__FILE__, __LINE__);  \
+			perror(call_description);     \
+			exit(EXIT_FAILURE);           \
+		}                                 \
+	} while (0)
+
 /**
  * Permitted operations:
  * connect <name>	// authentication to server

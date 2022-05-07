@@ -114,9 +114,43 @@ found:
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * Implement proper handling logic.
  */
-static int lmc_disconnect_client(struct lmc_client *client) { return 0; }
+static int lmc_disconnect_client(struct lmc_client *client) {
+	int err = -1;
+	size_t i;
+
+	printf("%s\n", client->cache->service_name);
+
+	for (i = 0; i < lmc_cache_count; i++)
+	{
+		if (lmc_caches[i] == NULL)
+			continue;
+		if (lmc_caches[i]->service_name == NULL)
+			continue;
+		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0)
+		{
+			// remove this from the array
+			for (int j = i + 1; j < lmc_cache_count; j++)
+			{
+				lmc_caches[j - 1] = lmc_caches[j];
+			}
+			lmc_cache_count--;
+
+			// flush them maybe?
+
+			// free the fields
+			free(client->cache->service_name);
+			// free cache with munmap
+
+			free(client->cache);
+			err = 0;
+			goto found;
+		}
+	}
+found:
+	return err;
+ }
 
 /**
  * Handle unsubscription requests.
@@ -125,9 +159,43 @@ static int lmc_disconnect_client(struct lmc_client *client) { return 0; }
  *
  * @return: 0 in case of success, or -1 otherwise.
  *
- * TODO: Implement proper handling logic.
+ * Implement proper handling logic.
  */
-static int lmc_unsubscribe_client(struct lmc_client *client) { return 0; }
+static int lmc_unsubscribe_client(struct lmc_client *client) {
+	int err = -1;
+	size_t i;
+
+	printf("%s\n", client->cache->service_name);
+
+	for (i = 0; i < lmc_cache_count; i++)
+	{
+		if (lmc_caches[i] == NULL)
+			continue;
+		if (lmc_caches[i]->service_name == NULL)
+			continue;
+		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0)
+		{
+			// remove this from the array
+			for (int j = i + 1; j < lmc_cache_count; j++)
+			{
+				lmc_caches[j - 1] = lmc_caches[j];
+			}
+			lmc_cache_count--;
+
+			// flush them maybe?
+
+			// free the fields
+			free(client->cache->service_name);
+			// free cache with munmap
+
+			free(client->cache);
+			err = 0;
+			goto found;
+		}
+	}
+found:
+	return err;
+ }
 
 /**
  * Add a log line to the client's cache.

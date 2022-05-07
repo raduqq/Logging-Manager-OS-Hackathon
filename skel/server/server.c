@@ -318,19 +318,42 @@ static int lmc_send_loglines(struct lmc_client *client)
 	return 0;
 }
 
+static int is_in_interval(char *time, char *start, char *end)
+{
+	int tc, ts, te;
+
+	if (end[0] == '\0') {
+		// nu exista end
+		return strcmp(time, start) >= 0;
+	}
+	return strcmp(time, start) >= 0 && strcmp(time, end) <= 0;
+}
+
 static int lmc_send_loglines_interval(struct lmc_client *client, char *args)
 {
+
+	char time1[21];
+	char time2[21];
+
 	struct log_in_memory *lim = client->cache->ptr;
 	unsigned long number_of_lines = lim->no_logs;
 	char buffer[128];
 	int i;
 
+	memset(time1, 0, sizeof(time1));
+	memset(time2, 0, sizeof(time2));
+
+	memcpy(time1, args, sizeof(time1) - 1);
+	memcpy(time2, args, sizeof(time2) - 1);
+
 	sprintf(buffer, "%ld", number_of_lines);
 	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);
 
 	for (i = 0; i < number_of_lines; i++) {
-		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
-			 LMC_SEND_FLAGS);
+		if (is_in_interval(lim->list_of_logs[i].time, time1, time2)) {
+			lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),
+				 LMC_SEND_FLAGS);
+		}
 	}
 
 	return 0;

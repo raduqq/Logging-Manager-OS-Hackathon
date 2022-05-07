@@ -35,8 +35,10 @@ din laboratorul de SD, 2019 - 2020.
   - Daca vreti sa rulati checker-ul impreuna cu functionalitatea de auth,
   am inclus perechea <user:"a" ; pass:"a">, pentru a facilita autentificarea
   
+* Get logs in interval
+  - Doar trebuie adaugate optiunile [t1 [t2]] in cazul comenzii getlogs
 
-* Modificam fisierul de log vechi 
+* Modificam fisierul de log vechi
 
 ===============================================================================
 ## Limitari

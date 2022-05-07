@@ -129,6 +129,7 @@ int lmc_init_client_cache(struct lmc_cache *cache)
 	void *addr = mmap(NULL, sizeof(struct log_in_memory), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
 	cache->ptr = addr;
 	((struct log_in_memory *)cache->ptr)->no_logs = 0;
+	((struct log_in_memory *)cache->ptr)->no_logs_stored_on_disk = 0;
 	((struct log_in_memory *)cache->ptr)->list_of_logs = NULL;
 	cache->pages = 0;
 	return 0;
@@ -183,7 +184,24 @@ int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
  *
  * TODO: Implement proper handling logic.
  */
-int lmc_flush_os(struct lmc_client *client) { return 0; }
+int lmc_flush_os(struct lmc_client *client)
+{
+	//
+	struct log_in_memory *lim = client->cache->ptr;
+	char buffer[512];
+	sprintf(buffer, "%s/%s.log", "logs_logmemcache", client->cache->service_name);
+	lmc_init_logdir("logs_logmemcache");
+	lmc_rotate_logfile(buffer);
+	int fd = open(buffer, O_WRONLY);
+
+	for (int i = lim->no_logs_stored_on_disk; i < lim->no_logs; i++) {
+		write(fd, &(lim->list_of_logs[i]), sizeof(lim->list_of_logs[i]));
+	}
+
+	lim->no_logs_stored_on_disk = lim->no_logs;
+
+	return 0;
+}
 
 /**
  * OS-specific function that handles client unsubscribe requests.

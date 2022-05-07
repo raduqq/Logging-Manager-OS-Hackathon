@@ -63,6 +63,7 @@ struct lmc_command {
  */
 struct log_in_memory {
 	int no_logs;
+	int no_logs_stored_on_disk;
 	struct lmc_client_logline *list_of_logs;
 };
 

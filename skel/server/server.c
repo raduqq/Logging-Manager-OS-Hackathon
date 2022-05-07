@@ -257,7 +257,9 @@ static int lmc_send_loglines(struct lmc_client *client)
 	struct log_in_memory *lim = client->cache->ptr;
 	uint64_t number_of_lines = lim->no_logs;
 	printf("debug no_lines: %d\n", number_of_lines);
-	lmc_send(client->client_sock, &number_of_lines, sizeof(uint64_t), LMC_SEND_FLAGS);
+	char buffer[128];
+	sprintf(buffer, "%ld", number_of_lines);
+	lmc_send(client->client_sock, buffer, sizeof(buffer), LMC_SEND_FLAGS);
 
 	for (int i = 0; i < number_of_lines; i++) {
 		lmc_send(client->client_sock, &(lim->list_of_logs[i]), sizeof(struct lmc_client_logline),

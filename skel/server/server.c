@@ -210,16 +210,7 @@ static int lmc_unsubscribe_client(struct lmc_client *client) { return 0; }
  * TODO: Implement proper handling logic.
  */
 
-struct log_in_memory {
-	int no_logs;
-	void **list_of_logs;
-}
-
-static int
-lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log)
-{
-	return 0;
-}
+static int lmc_add_log(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
 
 /**
  * Flush client logs to disk.
@@ -375,14 +366,14 @@ int lmc_get_command(struct lmc_client *client)
 
 		memcpy(log->time, cmd.data, LMC_TIME_SIZE);
 		log->time[LMC_TIME_SIZE - 1] = '\0';
-		
+
 		memcpy(log->logline, cmd.data + LMC_TIME_SIZE, LMC_LOGLINE_SIZE);
 		log->logline[LMC_LOGLINE_SIZE - 1] = '\0';
 
 		// Call command handler
 		err = lmc_add_log(client, log);
 
-		// Free aux resources	
+		// Free aux resources
 		free(log);
 		break;
 	case LMC_FLUSH:

@@ -5,7 +5,10 @@
 #ifndef __LMC_UTILS
 #define __LMC_UTILS
 
+#include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef __unix__
 #include <inttypes.h>
@@ -15,40 +18,37 @@
 
 #ifdef __unix__
 typedef int SOCKET;
-#define UINT64_FMT		"%" PRIu64
+#define UINT64_FMT "%" PRIu64
 
 #elif defined(_WIN32)
 typedef int ssize_t;
 #define snprintf _snprintf
 #define strdup _strdup
-#define UINT64_FMT		"%I64u"
+#define UINT64_FMT "%I64u"
 #endif
 
-#define	LMC_LINE_SIZE		256
-#define	LMC_COMMAND_SIZE	1024
-#define	LMC_SERVER_IP		"127.0.0.1"
-#define	LMC_SERVER_PORT		38379
-#define	LMC_CLIENT_MAX_NAME	16
-#define	LMC_STATUS_MAX_SIZE	512
-#define	LMC_TIME_FORMAT		"%Y/%m/%d-%H:%M:%S"
-#define	LMC_FTIME_FORMAT	"%Y.%m.%d-%H.%M.%S"
-#define	LMC_TIME_SIZE		20  /* strlen("YYYY/mm/dd-HH:MM:SS") + 1 */
-#define	LMC_LOGLINE_SIZE	(LMC_LINE_SIZE - LMC_TIME_SIZE)
-#define	LMC_STATS_FORMAT	"Status at %s\nMemory: %ldKB\nLoglines: %lu\n"
+#define LMC_LINE_SIZE 256
+#define LMC_COMMAND_SIZE 1024
+#define LMC_SERVER_IP "127.0.0.1"
+#define LMC_SERVER_PORT 38379
+#define LMC_CLIENT_MAX_NAME 16
+#define LMC_STATUS_MAX_SIZE 512
+#define LMC_TIME_FORMAT "%Y/%m/%d-%H:%M:%S"
+#define LMC_FTIME_FORMAT "%Y.%m.%d-%H.%M.%S"
+#define LMC_TIME_SIZE 20 /* strlen("YYYY/mm/dd-HH:MM:SS") + 1 */
+#define LMC_LOGLINE_SIZE (LMC_LINE_SIZE - LMC_TIME_SIZE)
+#define LMC_STATS_FORMAT "Status at %s\nMemory: %ldKB\nLoglines: %lu\n"
 
-#define nitems(arr)		(sizeof(arr) / sizeof(*arr))
+#define nitems(arr) (sizeof(arr) / sizeof(*arr))
 
 /* useful macro for handling error codes */
-#define DIE(assertion, call_description)  \
-	do                                    \
-	{                                     \
-		if (assertion)                    \
-		{                                 \
-			fprintf(stderr, "(%s, %d): ", \
-					__FILE__, __LINE__);  \
-			perror(call_description);     \
-			exit(EXIT_FAILURE);           \
-		}                                 \
+#define DIE(assertion, call_description)                                                                               \
+	do {                                                                                                           \
+		if (assertion) {                                                                                       \
+			fprintf(stderr, "(%s, %d): ", __FILE__, __LINE__);                                             \
+			perror(call_description);                                                                      \
+			exit(EXIT_FAILURE);                                                                            \
+		}                                                                                                      \
 	} while (0)
 
 /**
@@ -62,14 +62,14 @@ typedef int ssize_t;
  * getlogs [t1 [t2]]	// send back to client logs between t1 and t2
  */
 enum lmc_op_code {
-	LMC_CONNECT,		/* new service connects to app */
+	LMC_CONNECT, /* new service connects to app */
 	LMC_SUBSCRIBE,
-	LMC_STAT,		/* get stats */
-	LMC_ADD,		/* add log line */
-	LMC_FLUSH,		/* flush logs */
+	LMC_STAT,  /* get stats */
+	LMC_ADD,   /* add log line */
+	LMC_FLUSH, /* flush logs */
 	LMC_DISCONNECT,
 	LMC_UNSUBSCRIBE,
-	LMC_GETLOGS,		/* get log [from t1 [to t2]] */
+	LMC_GETLOGS, /* get log [from t1 [to t2]] */
 	LMC_UNKNOWN,
 };
 

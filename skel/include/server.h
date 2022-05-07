@@ -5,22 +5,22 @@
 #ifndef __LMC_SERVER
 #define __LMC_SERVER
 
-#include <sys/types.h>
 #include "utils.h"
+#include <sys/types.h>
 
 #ifdef __unix__
 #include <sys/socket.h>
 #endif
 
-#define	LMC_DEFAULT_CLIENTS_NO	20
-#define	LMC_FLUSH_TIME		1	/* minutes */
-#define	LMC_LOGFILE_NAME_LEN	128
+#define LMC_DEFAULT_CLIENTS_NO 20
+#define LMC_FLUSH_TIME 1 /* minutes */
+#define LMC_LOGFILE_NAME_LEN 128
 
 #ifdef __unix__
-#define LMC_SEND_FLAGS	MSG_NOSIGNAL
+#define LMC_SEND_FLAGS MSG_NOSIGNAL
 typedef int HANDLE;
 #elif defined(_WIN32)
-#define LMC_SEND_FLAGS		0
+#define LMC_SEND_FLAGS 0
 #endif
 
 /**
@@ -53,6 +53,17 @@ struct lmc_client {
 struct lmc_command {
 	const struct lmc_op *op;
 	char *data;
+};
+
+/**
+ * @brief structura care sta in memorie, care tine minte array-ul de loguri
+ * Structura tine minte un array de loguri si numarul de loguri.
+ * Array-ul va fi alocat si dezalocat cu mmap, respectiv munmap
+ * TODO: Read about remap
+ */
+struct log_in_memory {
+	int no_logs;
+	struct lmc_client_logline *list_of_logs;
 };
 
 extern char *lmc_logfile_path;

@@ -28,14 +28,12 @@ char *lmc_logfile_path;
  *
  * The lmc_get_command function executes blocking operations. The server
  * is unable to handle multiple connections simultaneously.
- * 
+ *
  * Server deals with this problem by creating a process for every client
  */
 static int lmc_client_function(SOCKET client_sock)
 {
 	pid_t client_pid = fork();
-	pid_t wait_ret;
-	int status;
 
 	int rc;
 	struct lmc_client *client;
@@ -122,14 +120,17 @@ void lmc_init_server_os(void)
  * @return: 0 in case of success, or -1 otherwise.
  *
  * Implement proper handling logic.
- * 
+ *
  * Initialize uninitialized fields
  */
+
 int lmc_init_client_cache(struct lmc_cache *cache)
 {
-	cache->ptr = NULL;
+	void *addr = mmap(NULL, sizeof(struct log_in_memory), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+	cache->ptr = addr;
+	((struct log_in_memory *)cache->ptr)->no_logs = 0;
+	((struct log_in_memory *)cache->ptr)->list_of_logs = NULL;
 	cache->pages = 0;
-
 	return 0;
 }
 
@@ -144,7 +145,34 @@ int lmc_init_client_cache(struct lmc_cache *cache)
  * TODO: Implement proper handling logic. Must be able to dynamically resize the
  * cache if it is full.
  */
-int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log) { return 0; }
+int lmc_add_log_os(struct lmc_client *client, struct lmc_client_logline *log)
+{
+	int page_size = getpagesize();
+
+	struct log_in_memory *lim = client->cache->ptr;
+
+	if (lim->no_logs == 0) {
+		lim->list_of_logs = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+		client->cache->pages = 1;
+	} else {
+		if ((lim->no_logs + 1) * sizeof(struct lmc_client_logline) < client->cache->pages * page_size) {
+			// imi incape in memorie pentru inca un log
+
+		} else {
+			// trebuie sa mai aloc o pagina
+			void *newAddr = mmap(NULL, (client->cache->pages + 1) * page_size, PROT_READ | PROT_WRITE,
+					     MAP_ANON | MAP_SHARED, -1, 0);
+			memcpy(newAddr, lim->list_of_logs, lim->no_logs * sizeof(struct lmc_client_logline));
+			munmap(lim->list_of_logs, client->cache->pages * page_size);
+			lim->list_of_logs = newAddr;
+		}
+	}
+
+	memcpy(&(lim->list_of_logs[lim->no_logs]), log, sizeof(struct lmc_client_logline));
+	lim->no_logs++;
+
+	return 0;
+}
 
 /**
  * OS-specific function that handles flushing the cache to disk,

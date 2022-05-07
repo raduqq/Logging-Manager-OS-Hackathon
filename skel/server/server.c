@@ -134,21 +134,8 @@ static int lmc_disconnect_client(struct lmc_client *client)
 			continue;
 		if (strcmp(lmc_caches[i]->service_name, client->cache->service_name) == 0)
 		{
-			// remove this from the array
-			for (int j = i + 1; j < lmc_cache_count; j++)
-			{
-				lmc_caches[j - 1] = lmc_caches[j];
-			}
-			lmc_cache_count--;
+			// TODO Terminate session
 
-			// flush them maybe?
-
-			// free the fields
-			free(client->cache->service_name);
-			// free cache with munmap
-
-			free(client->cache);
-			err = 0;
 			goto found;
 		}
 	}
